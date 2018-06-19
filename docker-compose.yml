@@ -1,0 +1,48 @@
+version: '2'
+services:
+
+  telegraf:
+    image: telegraf:1.7-alpine
+    container_name: telegraf
+    hostname: telegraf
+    ports:
+      - '8125:8125/udp'  # statsd input
+      - '9273:9273'      # prom client output
+    volumes:
+      - ./config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # command:
+    #   - '--debug'
+
+  grafana:
+    image: grafana/grafana:5.1.4
+    container_name: grafana
+    hostname: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana_lib:/var/lib/grafana
+      - grafana_log:/var/log/grafana
+      - grafana_etc:/etc/grafana
+
+  prometheus:
+    image: prom/prometheus:v2.3.1
+    container_name: prometheus
+    hostname: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--query.lookback-delta=10s'
+    #  - '--log.level=debug'
+
+volumes:
+  prometheus_data:
+  grafana_lib:
+  grafana_log:
+  grafana_etc:
